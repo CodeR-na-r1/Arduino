@@ -1,6 +1,6 @@
 #define STRIP_PIN 5     // пин ленты
 #define NUMLEDS 12      // кол-во светодиодов
-#define COLOR_DEBTH 1   // кол-во байт на цвет
+#define COLOR_DEBTH 3   // кол-во байт на цвет
 
 #define NUMCOLORS 15   // кол-во цветов в массиве
 #define NUMMODES 4   // кол-во режимов подсветки в массиве (функции подсветок)
@@ -88,5 +88,4 @@ void change_color()
     now_color = ++now_color >= NUMCOLORS ? 0 : now_color;  //  Увелечение текущего цвета подсветки или сброс при последнем цвете
   }
   Serial.println(count_interrupt);
-  
 }
