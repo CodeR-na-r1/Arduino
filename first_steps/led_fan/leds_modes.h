@@ -30,7 +30,7 @@ void static_color()
 void random_leds()
 {
   strip.set(random() % NUMLEDS, colors[random() % NUMCOLORS]);
-  delay(random() % 50);
+  delay(random() % *NOW_DELAY);
   strip.show();
   
   return;
@@ -76,6 +76,82 @@ void hue_colors()
    }
 
    delay(*NOW_DELAY);
+  }
+
+  return;
+}
+
+void blinking()
+{
+  for (int i = 0; i < NUMLEDS; ++i)
+    {
+      strip.set(i, colors[*NOW_COLOR]);
+   }
+   strip.show();
+   for (int i = 255; i >= 0; --i)
+    {
+      strip.setBrightness(i);
+      strip.show();
+      delay(*NOW_DELAY / 5);
+   }
+   for (int i = 0; i < 256; ++i)
+    {
+      strip.setBrightness(i);
+      strip.show();
+      delay(*NOW_DELAY / 5);
+   }
+
+   return;
+}  
+
+void blinking_different_colors()
+{
+  for (int j = 0; j < NUMCOLORS; ++j)  // NUMCOLORS раз
+  {
+    for (int i = 0; i < NUMLEDS; ++i)
+    {
+      strip.set(i, colors[j]);
+      delay(*NOW_DELAY);
+      strip.show();
+   }
+   for (int i = 255; i >= 0; --i)
+    {
+      strip.setBrightness(i);
+      strip.show();
+      delay(*NOW_DELAY / 5);
+   }
+   for (int i = 0; i < 256; ++i)
+    {
+      strip.setBrightness(i);
+      strip.show();
+      delay(*NOW_DELAY / 5);
+   }
+  }
+
+  return;
+}
+
+void blinking_different_colors_2()
+{
+  for (int j = 0; j < NUMCOLORS-1; ++j)  // NUMCOLORS раз
+  {
+   for (int i = 255; i >= 0; --i)
+    {
+      strip.setBrightness(i);
+      strip.show();
+      delay(*NOW_DELAY / 5);
+   }
+   for (int i = 0; i < NUMLEDS; ++i)
+    {
+      strip.set(i, colors[j+1]);
+   }
+   strip.show();
+   for (int i = 0; i < 256; ++i)
+    {
+      strip.setBrightness(i);
+      strip.show();
+      delay(*NOW_DELAY / 5);
+   }
   }
 
   return;

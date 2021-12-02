@@ -1,16 +1,16 @@
 #define STRIP_PIN 5     // пин ленты
 #define NUMLEDS 12      // кол-во светодиодов
-#define COLOR_DEBTH 1   // кол-во байт на цвет
+#define COLOR_DEBTH 3   // кол-во байт на цвет
 
 #define NUMCOLORS 15   // кол-во цветов в массиве
-#define NUMMODES 6   // кол-во режимов подсветки в массиве (функции подсветок)
+#define NUMMODES 9   // кол-во режимов подсветки в массиве (функции подсветок)
 
 #include <microLED.h>
 microLED<NUMLEDS, STRIP_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS> strip;
 #include "leds_modes.h"
 #include "global_var.h"
 
-void (*modes_arr[])() = {led_off, static_color, random_leds, animation_wheel, loading, hue_colors};  // Массив с функциями подсветок
+void (*modes_arr[])() = {led_off, static_color, random_leds, animation_wheel, loading, hue_colors, blinking, blinking_different_colors, blinking_different_colors_2};  // Массив с функциями подсветок
 
 long last_time = millis();  // Переменная таймера
 
@@ -21,8 +21,8 @@ uint8_t* NOW_DELAY;
 
 void setup()
 {
-  now_mode = 0;  // Переменная-счетчик текущего режима подсветки
-  now_color = 0;  // Переменная-счетчик текущего цвета подсветки
+  now_mode = 1;  // Переменная-счетчик текущего режима подсветки
+  now_color = 12;  // Переменная-счетчик текущего цвета подсветки
   NOW_COLOR = &now_color;  // Переменная-указатель для смены цвета подсветки
   NOW_DELAY = new uint8_t;  // Переменная-указатель для смены задержки подсветки (у подсветки "loading")
   *NOW_DELAY = 10;
@@ -56,20 +56,20 @@ void loop() {
       value < NUMMODES ? now_mode = value : now_mode = 0;
       Serial.print("Now_mode = "); Serial.println(now_mode);
       Serial.print("now_color = "); Serial.println(now_color);
-      Serial.print("------------");
+      Serial.println("------------");
     }
     else if (mode == 2) // Иначе смена цвета
     {
       value < NUMCOLORS ? now_color = value : now_color = 0;
       Serial.print("Now_mode = "); Serial.println(now_mode);
       Serial.print("now_color = "); Serial.println(now_color);
-      Serial.print("------------");
+      Serial.println("------------");
     }
     else if (mode == 3) // Иначе смена задержки подсветки
     {
       value < 255 ? *NOW_DELAY = value : *NOW_DELAY = 10;
       Serial.print("Now_delay = "); Serial.println(*NOW_DELAY);
-      Serial.print("------------");
+      Serial.println("------------");
     }
   }
 }
