@@ -38,14 +38,14 @@ void random_leds()
 
 void animation_wheel()
 {
-  for (int j=0; j<256;j+=25)  // Сдвиг колеса hue
+  for (int j=0; j<256;j+=10)  // Сдвиг колеса hue
   {
     for (int i=0; i<NUMLEDS;++i)  // Цвета колеса hue
   {
     strip.set(i, mWheel((i*255/NUMLEDS + j)% 256));
     strip.show();
   }
-  delay(25);
+  delay(*NOW_DELAY);
   }
   
   return;
@@ -57,35 +57,15 @@ void loading()
   {
     strip.set(i, colors[*NOW_COLOR]);
     i>1 ? strip.set(i-2, mRGB(0, 0, 0)) : strip.set(NUMLEDS+i-2, mRGB(0, 0, 0));  // Тушим цвет диода, который предшествует двум горящим
-    delay(10);
+    delay(*NOW_DELAY);
     strip.show();
   }
   
   return;
 }
 
-void led_first()
+void hue_colors()
 {
-  strip.clear();
-  
-  for (int i=0; i<NUMLEDS;++i)  // Зеленый
-  {
-    strip.set(i, mRGB(0, 255, 0));
-    delay(30);
-    strip.show();
-  }
-
-  delay(1000);
-
-  for (int i=0; i<NUMLEDS;++i)  // Цвета колеса hue
-  {
-    strip.set(i, mWheel(i*255/NUMLEDS));
-    delay(30);
-    strip.show();
-  }
-
-  delay(1000);
-  
   for (int j=0; j<=25;++j)  // 25 раз
   {
     for (int i=NUMLEDS-1; i>=0;--i)  // 25 цветов колеса hue с появлением против часовой стрелки
@@ -94,35 +74,9 @@ void led_first()
       delay(15);
       strip.show();
    }
+
+   delay(*NOW_DELAY);
   }
 
-  delay(1000);
-
-  for (int i=0; i<NUMLEDS;++i)  // Фиолетовый
-  {
-    strip.set(i, mRGB(148, 0, 211));
-    delay(30);
-    strip.show();
-  }
-
-  delay(1000);
-
-   for (int i=NUMLEDS-1; i>=0;--i)  // черыный с появлением против часовой стрелки
-   {
-    strip.set(i, mRGB(0, 0, 0));
-    delay(30);
-    strip.show();
-   }
-  
-  for (int j=0; j<NUMLEDS;++j)  // NUMLEDS раз
-  {
-    for (int i=0; i<NUMLEDS;++i)  // Красный по кругу только два диода
-    {
-    strip.set(i, mRGB(255, 0, 0));
-    i>1 ? strip.set(i-2, mRGB(0, 0, 0)) : strip.set(NUMLEDS+i-2, mRGB(0, 0, 0));  // Тушим цвет диода, который предшествует двум горящим
-    delay(30);
-    strip.show();
-    }
-  }
   return;
 }
