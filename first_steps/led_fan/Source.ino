@@ -3,14 +3,14 @@
 #define COLOR_DEBTH 3   // кол-во байт на цвет
 
 #define NUMCOLORS 15   // кол-во цветов в массиве
-#define NUMMODES 9   // кол-во режимов подсветки в массиве (функции подсветок)
+#define NUMMODES 10   // кол-во режимов подсветки в массиве (функции подсветок)
 
 #include <microLED.h>
 microLED<NUMLEDS, STRIP_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS> strip;
 #include "leds_modes.h"
 #include "global_var.h"
 
-void (*modes_arr[])() = {led_off, static_color, random_leds, animation_wheel, loading, hue_colors, blinking, blinking_different_colors, blinking_different_colors_2};  // Массив с функциями подсветок
+void (*modes_arr[])() = {led_off, static_color, random_leds, animation_wheel, loading, hue_colors, blinking, two_led, blinking_different_colors, blinking_different_colors_2};  // Массив с функциями подсветок
 
 long last_time = millis();  // Переменная таймера
 

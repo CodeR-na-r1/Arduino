@@ -102,7 +102,27 @@ void blinking()
    }
 
    return;
-}  
+}
+
+void two_led()
+{
+  for (int j = 0; j < NUMCOLORS; ++j)
+  {
+    mData color = colors[rand() % NUMCOLORS];
+    for (int i = 0; i < NUMLEDS / 2; ++i)
+    {
+      //strip.clear();
+      
+      strip.set(i, color);
+      strip.set(i + NUMLEDS / 2, color);
+      
+      delay(*NOW_DELAY);
+      strip.show();
+   }
+  }
+
+  return;
+}
 
 void blinking_different_colors()
 {
