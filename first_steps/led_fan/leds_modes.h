@@ -64,6 +64,31 @@ void loading()
   return;
 }
 
+void loading_2()
+{
+  mData temp = colors[rand() % NUMCOLORS];
+  for (int i = 0; i < NUMLEDS; ++i)
+  {
+    strip.set(i, temp);
+    i < (NUMLEDS / 2) ? *NOW_DELAY += 3 : *NOW_DELAY -= 3;
+    delay(*NOW_DELAY);
+    strip.show();
+  }
+
+  delay(*NOW_DELAY * 8);
+
+  for (int i = 0; i < NUMLEDS; ++i)
+  {
+    strip.set(i, mBlack);
+    delay(*NOW_DELAY);
+    strip.show();
+  }
+
+  delay(*NOW_DELAY * 8);
+
+  return;
+}
+
 void hue_colors()
 {
   for (int j=0; j<=25;++j)  // 25 раз
