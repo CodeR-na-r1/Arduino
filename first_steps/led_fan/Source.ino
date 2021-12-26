@@ -25,7 +25,7 @@ void setup()
   now_color = 12;  // Переменная-счетчик текущего цвета подсветки
   NOW_COLOR = &now_color;  // Переменная-указатель для смены цвета подсветки
   NOW_DELAY = new uint8_t;  // Переменная-указатель для смены задержки подсветки (у подсветки "loading")
-  *NOW_DELAY = 10;
+  *NOW_DELAY = 18;
 
   pinMode(3, INPUT_PULLUP);
   attachInterrupt(1, change_mode, FALLING);  // Прерывание на кнопку, смена режима подсветки по кнопке // D3

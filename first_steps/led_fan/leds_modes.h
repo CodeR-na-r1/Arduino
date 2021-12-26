@@ -20,7 +20,7 @@ void static_color()
   for (int i=0; i<NUMLEDS;++i)
   {
     strip.set(i, colors[*NOW_COLOR]);
-    delay(30);
+    delay(*NOW_DELAY);
     strip.show();
   }
   
