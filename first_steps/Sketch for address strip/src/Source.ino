@@ -48,6 +48,9 @@ void setup()
 #define LED_PIN 13
   pinMode(LED_PIN, INPUT);  // Инициализируем цифровой порт для индикации режима работы МК встроенным светодиодом
 
+#define RESET_PIN 9
+  pinMode(RESET_PIN, INPUT_PULLUP);  // Инициализируем цифровой порт для сброса режимов в дефолт
+
 #define ON_PIN 7
 #define ON_SLEEP_PIN 8
   pinMode(ON_PIN, INPUT);  // Инициализируем цифровые порты для выбора режима работы МК (переключение тумблером) -> в основном цикле
@@ -64,20 +67,9 @@ void setup()
   power.setSleepMode(POWERDOWN_SLEEP);  // Инициализируем режим энергосбережения
 
   start_index_eeprom_memory = find_start_eeprom();  // Далее инициализируем структуру с последним режимом
-  mode = new uint8_t;  // Инициализируем указатели
+  mode = new uint8_t;  // Выделяем память указателям
   color = new uint8_t;
-  if (start_index_eeprom_memory + 2 <= eeprom_size)
-  {
-    *mode = EEPROM.read(start_index_eeprom_memory); // Если переменная больше байта, то юзать метод get, и ниже в арифметике оператор sizeof(T)
-    *color = EEPROM.read(start_index_eeprom_memory + 1);
-    *mode = (*mode >= NUM_MODES) ? 0 : *mode;
-    *color = (*color >= NUM_COLORS) ? 0 : *color;
-  }
-  else
-  {
-    *mode = 0;
-    *color = 0;
-  }
+  load_info_eeprom(start_index_eeprom_memory);
 
   Serial.print("Start_index_eeprom_memory === ");  // Инфа о текущем индексе в EEPROM
   Serial.println(start_index_eeprom_memory);
@@ -96,7 +88,7 @@ void loop()
       attachInterrupt(1, change_color, FALLING);
     }
     strip.setBrightness(constrain(map(analogRead(BRIGHTNESS_PIN), 0, 1023, 0, 255), 0, 255));
-    if (*mode != EEPROM[start_index_eeprom_memory] || *color != EEPROM[start_index_eeprom_memory + 1])
+    if (*mode != EEPROM[start_index_eeprom_memory] || *color != EEPROM[start_index_eeprom_memory + 1])  // Мигающее предупреждение светодиода если есть изменения, иначе просто горит (мой пукан)
     {
       delayMicroseconds(40);
       digitalWrite(LED_PIN, !digitalRead(LED_PIN));
@@ -104,6 +96,10 @@ void loop()
     else
     {
       digitalWrite(LED_PIN, HIGH);
+    }
+    if (!digitalRead(RESET_PIN))
+    {
+      load_info_eeprom(start_index_eeprom_memory);
     }
   }
   else
@@ -124,9 +120,13 @@ void loop()
     }
     if (!flag_dynamic)
     {
+      attachInterrupt(0, none, FALLING); // Ставим прерывания чтобы просыпаться по кнопкам
+      attachInterrupt(1, none, FALLING);
       power.hardwareDisable(PWR_ALL);
       power.sleep(SLEEP_FOREVER);
       power.hardwareEnable(PWR_ALL);
+      detachInterrupt(0); // Затираем прерывания после сна
+      detachInterrupt(1);
     }
   }
 }
@@ -142,9 +142,27 @@ short find_start_eeprom()
   return index;
 }
 
+void load_info_eeprom(short& index)
+{
+  if (index + 2 <= eeprom_size)  // Инициализируем указатели
+  {
+    *mode = EEPROM.read(index); // Если переменная больше байта, то юзать метод get, и ниже в арифметике оператор sizeof(T)
+    *color = EEPROM.read(index + 1);
+    *mode = (*mode >= NUM_MODES) ? 0 : *mode;
+    *color = (*color >= NUM_COLORS) ? 0 : *color;
+  }
+  else
+  {
+    *mode = 0;
+    *color = 0;
+  }
+
+  return;
+}
+
 void save_info_eeprom(short& index)
 {
-  index += 2; // Начальный индекс, куда надо пистать данные
+  index += 2; // Начальный индекс, куда надо писать данные
   index = ((index + 1) >= eeprom_size) ? 0 : index; // Проверка на границы и сброс при выходе за границы
   EEPROM.update(index, *mode);
   EEPROM.update(index + 1, *color);
@@ -171,5 +189,10 @@ void change_color()
     last_time = millis();
   }
 
+  return;
+}
+
+void none()
+{
   return;
 }
