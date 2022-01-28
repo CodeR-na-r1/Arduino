@@ -1,7 +1,7 @@
 // Скетч для адресной светодиодной ленты
 
-#define NUM_MODES 1
-#define NUM_COLORS 1
+//! При самом первом запуске этого скетча на ардуино, то есть еще до его загрузки в плату, необходимо проинициализироовать
+//! EEPROM память нолями. Для этого есть скетч с названием init
 
 // Подключаем библиотеку для ленты
 #define STRIP_PIN 4     // пин ленты
@@ -10,8 +10,12 @@
 
 #include <microLED.h>
 #include "global_variables.h"
-#include "leds_mods.h"
 microLED<NUMLEDS, STRIP_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS> strip;
+
+#include "leds_mods.h"
+#define NUM_MODES 2
+void(*modes_arr[])() = {off, static_color};
+#define NUM_COLORS 1
 
 // Подключаем библиотеку для возможности энергосбережения
 #include <GyverPower.h>
@@ -26,6 +30,7 @@ short start_index_eeprom_memory = 0;
 uint8_t* mode;
 uint8_t* color;
 bool flag_on; // Флаг, информирующий о режиме ON (включена настройка режимов, цветов, яркости)
+bool flag_dynamic; // Флаг, информирующий о том, что включен динамический режим и что ардуино спать нельзя
 volatile unsigned long long last_time = 0;  // Инициализируем переменную для сэйва времени
 
 void setup()
@@ -33,6 +38,7 @@ void setup()
   Serial.begin(9600);
 
   strip.clear();  // Инициализируем ленту
+  strip.setBrightness(255);
   strip.show();
   delayMicroseconds(40);
 
@@ -64,6 +70,8 @@ void setup()
   {
     *mode = EEPROM.read(start_index_eeprom_memory); // Если переменная больше байта, то юзать метод get, и ниже в арифметике оператор sizeof(T)
     *color = EEPROM.read(start_index_eeprom_memory + 1);
+    *mode = (*mode >= NUM_MODES) ? 0 : *mode;
+    *color = (*color >= NUM_COLORS) ? 0 : *color;
   }
   else
   {
@@ -77,6 +85,8 @@ void setup()
 
 void loop()
 {
+  (*modes_arr[*mode])();
+
   if (digitalRead(ON_PIN))
   {
     if (!flag_on)
@@ -85,13 +95,16 @@ void loop()
       attachInterrupt(0, change_mode, FALLING);
       attachInterrupt(1, change_color, FALLING);
     }
-
-  }
-  else if (digitalRead(ON_SLEEP_PIN))
-  {
-    power.hardwareDisable(PWR_ALL);
-    power.sleep(SLEEP_FOREVER);
-    power.hardwareEnable(PWR_ALL);
+    strip.setBrightness(constrain(map(analogRead(BRIGHTNESS_PIN), 0, 1023, 0, 255), 0, 255));
+    if (*mode != EEPROM[start_index_eeprom_memory] || *color != EEPROM[start_index_eeprom_memory + 1])
+    {
+      delayMicroseconds(40);
+      digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+    }
+    else
+    {
+      digitalWrite(LED_PIN, HIGH);
+    }
   }
   else
   {
@@ -101,21 +114,23 @@ void loop()
       detachInterrupt(0);
       detachInterrupt(1);
     }
-    power.hardwareDisable(PWR_ALL);
-    power.sleep(SLEEP_FOREVER);
-    power.hardwareEnable(PWR_ALL);
-  }
-
-  /*
-    analogRead(0)) //+ время (чо-то бешенные значения)
+    if (!digitalRead(ON_SLEEP_PIN))
     {
-      value = analogRead(0);
-      Serial.print('\n');
-      Serial.print(value);
+      (*modes_arr[0])();  // Выключение ленты и заодно сброс флага, чтобы поспать со 100% вероятностью
+      if (*mode != EEPROM[start_index_eeprom_memory] || *color != EEPROM[start_index_eeprom_memory + 1])
+      {
+        save_info_eeprom(start_index_eeprom_memory);
+      }
     }
+    if (!flag_dynamic)
+    {
+      power.hardwareDisable(PWR_ALL);
+      power.sleep(SLEEP_FOREVER);
+      power.hardwareEnable(PWR_ALL);
     }
-  */
+  }
 }
+
 short find_start_eeprom()
 {
   short index(0);
@@ -125,6 +140,16 @@ short find_start_eeprom()
       break;
   }
   return index;
+}
+
+void save_info_eeprom(short& index)
+{
+  index += 2; // Начальный индекс, куда надо пистать данные
+  index = ((index + 1) >= eeprom_size) ? 0 : index; // Проверка на границы и сброс при выходе за границы
+  EEPROM.update(index, *mode);
+  EEPROM.update(index + 1, *color);
+
+  return;
 }
 
 void change_mode()
