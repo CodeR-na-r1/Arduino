@@ -1,5 +1,8 @@
 // Скетч для адресной светодиодной ленты
 
+#define NUM_MODES 1
+#define NUM_COLORS 1
+
 // Подключаем библиотеку для ленты
 #define STRIP_PIN 4     // пин ленты
 #define NUMLEDS 240      // кол-во светодиодов
@@ -19,12 +22,11 @@ extern GyverPower power;
 #define eeprom_size EEPROM.length()
 short start_index_eeprom_memory = 0;
 
-// Структура с данными, в них инфа о последнем режиме
-typedef struct _config
-{
-  short mode;
-  short color;
-} START_INFO;
+// Указатели для хранения и чтения инфы о режиме ленты в текущем и других юнитах
+uint8_t* mode;
+uint8_t* color;
+bool flag_on; // Флаг, информирующий о режиме ON (включена настройка режимов, цветов, яркости)
+volatile unsigned long long last_time = 0;  // Инициализируем переменную для сэйва времени
 
 void setup()
 {
@@ -34,35 +36,58 @@ void setup()
   strip.show();
   delayMicroseconds(40);
 
-  pinMode(A0, INPUT);  // Инициализируем аналоговый порт для считывания яркости потенциометром
+#define BRIGHTNESS_PIN A0
+  pinMode(BRIGHTNESS_PIN, INPUT);  // Инициализируем аналоговый порт для считывания яркости потенциометром
 
-  pinMode(13, INPUT);  // Инициализируем цифровой порт для индикации режима работы МК встроенным светодиодом
+#define LED_PIN 13
+  pinMode(LED_PIN, INPUT);  // Инициализируем цифровой порт для индикации режима работы МК встроенным светодиодом
 
-  pinMode(7, INPUT);  // Инициализируем цифровые порты для выбора режима работы МК (переключение тумблером) -> в основном цикле
-  pinMode(8, INPUT);
+#define ON_PIN 7
+#define ON_SLEEP_PIN 8
+  pinMode(ON_PIN, INPUT);  // Инициализируем цифровые порты для выбора режима работы МК (переключение тумблером) -> в основном цикле
+  pinMode(ON_SLEEP_PIN, INPUT);
+  flag_on = false;  // Инициализируем флаг, информирующий о режиме ON (в режиме ON он в тру автоматом, а вот для других надо задать)
 
-  pinMode(2, INPUT_PULLUP);  // Инициализируем цифровые порты для прерываний (считывания режима или цвета)
-  pinMode(3, INPUT_PULLUP);
+#define MODE_PIN 2
+#define COLOR_PIN 3
+  pinMode(MODE_PIN, INPUT_PULLUP);  // Инициализируем цифровые порты для прерываний (считывания режима или цвета)
+  pinMode(COLOR_PIN, INPUT_PULLUP);
 
-  volatile unsigned long long last_time = 0;  // Инициализируем переменную для сэйва времени
+  last_time = millis();  // Инициализируем переменную для сэйва времени
 
   power.setSleepMode(POWERDOWN_SLEEP);  // Инициализируем режим энергосбережения
 
   start_index_eeprom_memory = find_start_eeprom();  // Далее инициализируем структуру с последним режимом
-  START_INFO si;
-  (start_index_eeprom_memory + sizeof(START_INFO) <= eeprom_size) ? EEPROM.get(start_index_eeprom_memory, si) : EEPROM.get(0, si);
-  Serial.print("Start_index_eeprom_memory === ");
+  mode = new uint8_t;  // Инициализируем указатели
+  color = new uint8_t;
+  if (start_index_eeprom_memory + 2 <= eeprom_size)
+  {
+    *mode = EEPROM.read(start_index_eeprom_memory); // Если переменная больше байта, то юзать метод get, и ниже в арифметике оператор sizeof(T)
+    *color = EEPROM.read(start_index_eeprom_memory + 1);
+  }
+  else
+  {
+    *mode = 0;
+    *color = 0;
+  }
+
+  Serial.print("Start_index_eeprom_memory === ");  // Инфа о текущем индексе в EEPROM
   Serial.println(start_index_eeprom_memory);
 }
 
 void loop()
 {
-  if ()
+  if (digitalRead(ON_PIN))
   {
-    attachInterrupt(0, fucn, FALLING);
-    attachInterrupt(1, fucn, FALLING);
+    if (!flag_on)
+    {
+      flag_on = true;
+      attachInterrupt(0, change_mode, FALLING);
+      attachInterrupt(1, change_color, FALLING);
+    }
+
   }
-  else if ()
+  else if (digitalRead(ON_SLEEP_PIN))
   {
     power.hardwareDisable(PWR_ALL);
     power.sleep(SLEEP_FOREVER);
@@ -70,10 +95,17 @@ void loop()
   }
   else
   {
+    if (flag_on)
+    {
+      flag_on = false;
+      detachInterrupt(0);
+      detachInterrupt(1);
+    }
     power.hardwareDisable(PWR_ALL);
     power.sleep(SLEEP_FOREVER);
     power.hardwareEnable(PWR_ALL);
   }
+
   /*
     analogRead(0)) //+ время (чо-то бешенные значения)
     {
@@ -95,12 +127,24 @@ short find_start_eeprom()
   return index;
 }
 
-/*
-  void fucn()
+void change_mode()
+{
+  if (millis() - last_time > 200)
   {
-  if (millis() - last_time >= 200)
-  {
+    *mode = (++(*mode) >= NUM_MODES) ? 0 : *mode;
     last_time = millis();
-    ++value;
   }
-  }*/
+
+  return;
+}
+
+void change_color()
+{
+  if (millis() - last_time > 200)
+  {
+    *color = (++(*color) >= NUM_COLORS) ? 0 : *color;
+    last_time = millis();
+  }
+
+  return;
+}
