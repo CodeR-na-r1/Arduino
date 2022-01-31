@@ -15,7 +15,7 @@ microLED<NUMLEDS, STRIP_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAV
 #include "leds_mods.h"
 #define NUM_MODES 2
 void(*modes_arr[])() = {off, static_color};
-#define NUM_COLORS 1
+#define NUM_COLORS 5
 
 // Подключаем библиотеку для возможности энергосбережения
 #include <GyverPower.h>
@@ -46,15 +46,15 @@ void setup()
   pinMode(BRIGHTNESS_PIN, INPUT);  // Инициализируем аналоговый порт для считывания яркости потенциометром
 
 #define LED_PIN 13
-  pinMode(LED_PIN, INPUT);  // Инициализируем цифровой порт для индикации режима работы МК встроенным светодиодом
+  pinMode(LED_PIN, OUTPUT);  // Инициализируем цифровой порт для индикации режима работы МК встроенным светодиодом
 
 #define RESET_PIN 9
   pinMode(RESET_PIN, INPUT_PULLUP);  // Инициализируем цифровой порт для сброса режимов в дефолт
 
 #define ON_PIN 7
 #define ON_SLEEP_PIN 8
-  pinMode(ON_PIN, INPUT);  // Инициализируем цифровые порты для выбора режима работы МК (переключение тумблером) -> в основном цикле
-  pinMode(ON_SLEEP_PIN, INPUT);
+  pinMode(ON_PIN, INPUT_PULLUP);  // Инициализируем цифровые порты для выбора режима работы МК (переключение тумблером) -> в основном цикле
+  pinMode(ON_SLEEP_PIN, INPUT_PULLUP);
   flag_on = false;  // Инициализируем флаг, информирующий о режиме ON (в режиме ON он в тру автоматом, а вот для других надо задать)
 
 #define MODE_PIN 2
@@ -66,10 +66,10 @@ void setup()
 
   power.setSleepMode(POWERDOWN_SLEEP);  // Инициализируем режим энергосбережения
 
-  start_index_eeprom_memory = find_start_eeprom();  // Далее инициализируем структуру с последним режимом
+  start_index_eeprom_memory = find_start_eeprom();  // Ищем область в памяти EEPROM с последним сохранённым режимом
   mode = new uint8_t;  // Выделяем память указателям
   color = new uint8_t;
-  load_info_eeprom(start_index_eeprom_memory);
+  load_info_eeprom(start_index_eeprom_memory);  // Далее инициализируем указатели последним сохранённым режимом
 
   Serial.print("Start_index_eeprom_memory === ");  // Инфа о текущем индексе в EEPROM
   Serial.println(start_index_eeprom_memory);
@@ -79,18 +79,20 @@ void loop()
 {
   (*modes_arr[*mode])();
 
-  if (digitalRead(ON_PIN))
+  if (!digitalRead(ON_PIN))
   {
     if (!flag_on)
     {
       flag_on = true;
+      Serial.print("\nMODE: ON");
+      delay(100);
       attachInterrupt(0, change_mode, FALLING);
       attachInterrupt(1, change_color, FALLING);
     }
-    strip.setBrightness(constrain(map(analogRead(BRIGHTNESS_PIN), 0, 1023, 0, 255), 0, 255));
+    //strip.setBrightness(constrain(map(analogRead(BRIGHTNESS_PIN), 0, 1023, 0, 255), 0, 255));
     if (*mode != EEPROM[start_index_eeprom_memory] || *color != EEPROM[start_index_eeprom_memory + 1])  // Мигающее предупреждение светодиода если есть изменения, иначе просто горит (мой пукан)
     {
-      delayMicroseconds(40);
+      delay(50);
       digitalWrite(LED_PIN, !digitalRead(LED_PIN));
     }
     else
@@ -107,11 +109,13 @@ void loop()
     if (flag_on)
     {
       flag_on = false;
+      Serial.print("\nMODE: SLEEP");
       detachInterrupt(0);
       detachInterrupt(1);
     }
-    if (!digitalRead(ON_SLEEP_PIN))
+    if (digitalRead(ON_SLEEP_PIN))
     {
+      Serial.print("_OFF");
       (*modes_arr[0])();  // Выключение ленты и заодно сброс флага, чтобы поспать со 100% вероятностью
       if (*mode != EEPROM[start_index_eeprom_memory] || *color != EEPROM[start_index_eeprom_memory + 1])
       {
@@ -172,11 +176,14 @@ void save_info_eeprom(short& index)
 
 void change_mode()
 {
-  if (millis() - last_time > 200)
+  if (millis() - last_time > 350)
   {
     *mode = (++(*mode) >= NUM_MODES) ? 0 : *mode;
     last_time = millis();
   }
+
+  Serial.print("mode === ");
+  Serial.println(*mode);
 
   return;
 }
@@ -188,6 +195,9 @@ void change_color()
     *color = (++(*color) >= NUM_COLORS) ? 0 : *color;
     last_time = millis();
   }
+
+  Serial.print("color === ");
+  Serial.println(*color);
 
   return;
 }

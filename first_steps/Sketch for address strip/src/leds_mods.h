@@ -1,6 +1,6 @@
 #include "global_variables.h"
 
-const mData colors[] = {mPurple};
+const mData colors[] = {mPurple, mRed, mOrange, mYellow, mAqua};
 
 void off()
 {
