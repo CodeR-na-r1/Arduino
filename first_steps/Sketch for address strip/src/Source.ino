@@ -5,8 +5,8 @@
 
 // Подключаем библиотеку для ленты
 #define STRIP_PIN 4     // пин ленты
-#define NUMLEDS 240      // кол-во светодиодов
-#define COLOR_DEBTH 1   // байт на цвет
+#define NUMLEDS 164      // кол-во светодиодов
+#define COLOR_DEBTH 3   // байт на цвет
 
 #include <microLED.h>
 #include "global_variables.h"
@@ -49,6 +49,9 @@ void setup()
 
 #define LED_PIN 13
   pinMode(LED_PIN, OUTPUT);  // Инициализируем цифровой порт для индикации режима работы МК встроенным светодиодом
+
+#define SAVE_PIN 12
+  pinMode(SAVE_PIN, INPUT_PULLUP);  // Инициализируем цифровой порт для кнопки сохранения текущего режима в память
 
 #define RESET_PIN 9
   pinMode(RESET_PIN, INPUT_PULLUP);  // Инициализируем цифровой порт для сброса режимов в дефолт
@@ -120,6 +123,10 @@ void loop()
     {
       load_info_eeprom(start_index_eeprom_memory);
     }
+    if (!digitalRead(SAVE_PIN))
+    {
+      save_info_eeprom(start_index_eeprom_memory);  // В целях защиты EEPROM памяти от лишних перезаписей, теперь сохранение осуществляется только по зажатию кнопки сохранения
+    }
   }
   else // Если НЕзамкнут пин ON_PIN, то либо выкл, либо сон
   {
@@ -134,10 +141,10 @@ void loop()
     {
       Serial.print("_OFF");
       (*modes_arr[0])();  // Выключение ленты и заодно сброс флага, чтобы поспать со 100% вероятностью
-      if (*mode != EEPROM[start_index_eeprom_memory] || *color != EEPROM[start_index_eeprom_memory + 1])
-      {
-        save_info_eeprom(start_index_eeprom_memory);
-      }
+      //if (*mode != EEPROM[start_index_eeprom_memory] || *color != EEPROM[start_index_eeprom_memory + 1])
+      //{
+      //  save_info_eeprom(start_index_eeprom_memory);
+      //}
     }
     if (!digitalRead(MULTIFUNCTIONAL_PIN))
     {
@@ -191,6 +198,17 @@ void save_info_eeprom(short& index)
   index = ((index + 1) >= eeprom_size) ? 0 : index; // Проверка на границы и сброс при выходе за границы
   EEPROM.update(index, *mode);
   EEPROM.update(index + 1, *color);
+
+  if (index >= 2)   // Затираем старые значения
+  {
+    EEPROM.update(index - 1, 0);
+    EEPROM.update(index - 2, 0);
+  }
+  else
+  {
+    EEPROM.update((eeprom_size + index - 1) % eeprom_size, 0);
+    EEPROM.update((eeprom_size + index - 2) % eeprom_size, 0);
+  }
 
   return;
 }
