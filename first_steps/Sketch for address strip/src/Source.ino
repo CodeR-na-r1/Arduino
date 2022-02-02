@@ -103,6 +103,8 @@ void loop()
       strip.setBrightness(constrain(map(analogRead(ANALOG_0_PIN), 0, 1023, 0, 255), 0, 255));
 #else
       strip.setBrightness(change_brightness(brightness));
+      Serial.print("Ratio brightness === ");
+      Serial.println(brightness);
 #endif
     }
     if (*mode != EEPROM[start_index_eeprom_memory] || *color != EEPROM[start_index_eeprom_memory + 1])  // Мигающее предупреждение светодиода если есть изменения, иначе просто горит (мой пукан)
