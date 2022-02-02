@@ -29,6 +29,7 @@ short start_index_eeprom_memory = 0;
 // Указатели для хранения и чтения инфы о режиме ленты в текущем и других юнитах
 uint8_t* mode;
 uint8_t* color;
+uint8_t brightness;
 bool flag_on; // Флаг, информирующий о режиме ON (включена настройка режимов, цветов, яркости)
 bool flag_dynamic; // Флаг, информирующий о том, что включен динамический режим и что ардуино спать нельзя
 volatile unsigned long long last_time = 0;  // Инициализируем переменную для сэйва времени
@@ -53,7 +54,7 @@ void setup()
   pinMode(RESET_PIN, INPUT_PULLUP);  // Инициализируем цифровой порт для сброса режимов в дефолт
 
 #define MULTIFUNCTIONAL_PIN 11
-pinMode(MULTIFUNCTIONAL_PIN, INPUT_PULLUP); // В активном режиме используется для регулировки яркости, а в спящем позволяет снять флаг dynamic, чтобы уснуть
+  pinMode(MULTIFUNCTIONAL_PIN, INPUT_PULLUP); // В активном режиме используется для регулировки яркости, а в спящем позволяет снять флаг dynamic, чтобы уснуть
 
 #define ON_PIN 7
 #define ON_SLEEP_PIN 8
@@ -77,6 +78,9 @@ pinMode(MULTIFUNCTIONAL_PIN, INPUT_PULLUP); // В активном режиме 
 
   Serial.print("Start_index_eeprom_memory === ");  // Инфа о текущем индексе в EEPROM
   Serial.println(start_index_eeprom_memory);
+
+#define MAX_COUNT_MODES_BRIGHTNESS 5
+  brightness = 0;
 }
 
 void loop()
@@ -93,7 +97,14 @@ void loop()
       attachInterrupt(0, change_mode, FALLING);
       attachInterrupt(1, change_color, FALLING);
     }
-    //strip.setBrightness(constrain(map(analogRead(ANALOG_0_PIN), 0, 1023, 0, 255), 0, 255));
+    if (!digitalRead(MULTIFUNCTIONAL_PIN)) // Регулировка яркости ленты
+    {
+#ifdef __ANALOG_CHANGE_BRIGHTNESS__   // Регулировка по потенциометру если дефайн это, иначе по кнопке
+      strip.setBrightness(constrain(map(analogRead(ANALOG_0_PIN), 0, 1023, 0, 255), 0, 255));
+#else
+      strip.setBrightness(change_brightness(brightness));
+#endif
+    }
     if (*mode != EEPROM[start_index_eeprom_memory] || *color != EEPROM[start_index_eeprom_memory + 1])  // Мигающее предупреждение светодиода если есть изменения, иначе просто горит (мой пукан)
     {
       delay(50);
@@ -125,6 +136,10 @@ void loop()
       {
         save_info_eeprom(start_index_eeprom_memory);
       }
+    }
+    if (!digitalRead(MULTIFUNCTIONAL_PIN))
+    {
+      flag_dynamic = false;
     }
     if (!flag_dynamic)
     {
@@ -209,4 +224,10 @@ void change_color()
 void none()
 {
   return;
+}
+
+uint8_t change_brightness(uint8_t& brightness)
+{
+  brightness = ++brightness >= MAX_COUNT_MODES_BRIGHTNESS ? 0 : brightness;
+  return (255 - (255 / MAX_COUNT_MODES_BRIGHTNESS * brightness));
 }
