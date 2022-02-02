@@ -12,10 +12,10 @@
 #include "global_variables.h"
 microLED<NUMLEDS, STRIP_PIN, MLED_NO_CLOCK, LED_WS2812, ORDER_GRB, CLI_AVER, SAVE_MILLIS> strip;
 
-#define NUM_MODES 2
+#define NUM_MODES 3
 #define NUM_COLORS 8
 #include "leds_mods.h"
-void(*modes_arr[])() = {off, static_color};
+void(*modes_arr[NUM_MODES])() = {off, static_color, random_leds};
 
 // Подключаем библиотеку для возможности энергосбережения
 #include <GyverPower.h>

@@ -29,3 +29,17 @@ void static_color()
 
   return;
 }
+
+void random_leds()
+{
+  flag_dynamic = true;
+
+  for (int i(0); i < NUMLEDS / 2; ++i)
+  {
+    strip.set(rand() % NUMLEDS , colors[rand() % NUM_COLORS]);
+    strip.show();
+    delayMicroseconds(40);
+  }
+
+  return;
+}
