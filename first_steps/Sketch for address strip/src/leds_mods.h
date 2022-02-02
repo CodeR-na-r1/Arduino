@@ -36,7 +36,7 @@ void random_leds()
 
   for (int i(0); i < NUMLEDS / 2; ++i)
   {
-    strip.set(rand() % NUMLEDS , colors[rand() % NUM_COLORS]);
+    strip.set(random() % NUMLEDS , colors[random() % NUM_COLORS]);
     strip.show();
     delayMicroseconds(40);
   }

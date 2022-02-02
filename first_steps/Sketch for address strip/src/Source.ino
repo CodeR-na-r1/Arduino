@@ -42,14 +42,18 @@ void setup()
   strip.show();
   delayMicroseconds(40);
 
-#define BRIGHTNESS_PIN A0
-  pinMode(BRIGHTNESS_PIN, INPUT);  // Инициализируем аналоговый порт для считывания яркости потенциометром
+#define ANALOG_0_PIN A0
+  pinMode(ANALOG_0_PIN, INPUT);  // Инициализируем аналоговый порт для считывания яркости потенциометром
+  randomSeed(analogRead(ANALOG_0_PIN));
 
 #define LED_PIN 13
   pinMode(LED_PIN, OUTPUT);  // Инициализируем цифровой порт для индикации режима работы МК встроенным светодиодом
 
 #define RESET_PIN 9
   pinMode(RESET_PIN, INPUT_PULLUP);  // Инициализируем цифровой порт для сброса режимов в дефолт
+
+#define MULTIFUNCTIONAL_PIN 11
+pinMode(MULTIFUNCTIONAL_PIN, INPUT_PULLUP); // В активном режиме используется для регулировки яркости, а в спящем позволяет снять флаг dynamic, чтобы уснуть
 
 #define ON_PIN 7
 #define ON_SLEEP_PIN 8
@@ -79,7 +83,7 @@ void loop()
 {
   (*modes_arr[*mode])();
 
-  if (!digitalRead(ON_PIN))
+  if (!digitalRead(ON_PIN)) // Если замкнут пин ON_PIN, то активный режим вкл
   {
     if (!flag_on)
     {
@@ -89,7 +93,7 @@ void loop()
       attachInterrupt(0, change_mode, FALLING);
       attachInterrupt(1, change_color, FALLING);
     }
-    //strip.setBrightness(constrain(map(analogRead(BRIGHTNESS_PIN), 0, 1023, 0, 255), 0, 255));
+    //strip.setBrightness(constrain(map(analogRead(ANALOG_0_PIN), 0, 1023, 0, 255), 0, 255));
     if (*mode != EEPROM[start_index_eeprom_memory] || *color != EEPROM[start_index_eeprom_memory + 1])  // Мигающее предупреждение светодиода если есть изменения, иначе просто горит (мой пукан)
     {
       delay(50);
@@ -104,7 +108,7 @@ void loop()
       load_info_eeprom(start_index_eeprom_memory);
     }
   }
-  else
+  else // Если НЕзамкнут пин ON_PIN, то либо выкл, либо сон
   {
     if (flag_on)
     {
@@ -113,7 +117,7 @@ void loop()
       detachInterrupt(0);
       detachInterrupt(1);
     }
-    if (digitalRead(ON_SLEEP_PIN))
+    if (!digitalRead(ON_SLEEP_PIN)) // Если замкнут пин ON_SLEEP_PIN, то сохраняемся и потом уснем
     {
       Serial.print("_OFF");
       (*modes_arr[0])();  // Выключение ленты и заодно сброс флага, чтобы поспать со 100% вероятностью
