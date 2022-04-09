@@ -73,3 +73,33 @@ void two_led()
 
   return;
 }
+
+// -------------------------- Special --------------------------
+
+void completed()
+{
+  for (int i=0; i<NUM_LEDS;++i)
+  {
+    strip.set(i, mRGB(0, 255, 0));
+  }
+  
+  strip.show();
+
+  delay(30);
+  
+  return;
+}
+
+void start_setup()
+{
+  for (int i=0; i<NUM_LEDS;++i)
+  {
+    strip.set(i, mRGB(255, 0, 0));
+  }
+  
+  strip.show();
+
+  delay(30);
+  
+  return;
+}
