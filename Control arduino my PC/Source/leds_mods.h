@@ -3,7 +3,7 @@
 #include "connecting_variables.h"
 #include "config.h"
 
-const mData colors[] = {mPurple, mRed, mOrange, mYellow, mAqua, mNavy, mMagenta, mSilver}; 
+const mData colors[] = {mPurple, mRed, mOrange, mYellow, mAqua, mNavy, mMagenta, mSilver};  // Цвета
 
 void led_off()
 {
